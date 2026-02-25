@@ -40,6 +40,8 @@
         .parts-list {
             display: grid;
             gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            margin-bottom: 40px;
         }
 
         .part-card {
@@ -49,13 +51,45 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
-        .part-image {
-            width: 100%;
-            height: 200px;
-            object-fit: contain;
-            margin-bottom: 15px;
+        /* Контейнер для главного изображения с фиксированным соотношением сторон */
+        .image-container {
+            aspect-ratio: 4 / 3;
             background: #f8f9fa;
             border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .part-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .thumbnails {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .thumbnail:hover {
+            opacity: 1;
+            border-color: #e74c3c;
         }
 
         .part-models {
@@ -79,7 +113,6 @@
             margin: 10px 0;
         }
 
-        /* Стили для заметок (аналогов) */
         .part-notes {
             background: #fff3cd;
             border-left: 4px solid #ffc107;
@@ -90,199 +123,280 @@
             color: #856404;
         }
 
-        @media (min-width: 768px) {
-            .parts-list {
-                grid-template-columns: repeat(2, 1fr);
-            }
+        .reference-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        .reference-section h2 {
+            margin-bottom: 15px;
+            color: #2b8a3e;
+        }
+
+        .engine-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .engine-code {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .engine-models {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .engine-model-chip {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 16px;
+            font-size: 0.8em;
         }
     </style>
 </head>
 <body>
-<div class="filters">
-    <select id="modelSelect">
-        <option value="">Все модели</option>
-    </select>
-    <select id="categorySelect">
-        <option value="">Все категории</option>
-        <option value="Двигатель">Двигатель</option>
-        <option value="Ремни">Ремни</option>
-        <option value="Сальники">Сальники</option>
-        <option value="Тормоза">Тормозная система</option>
-        <option value="Передняя подвеска">Передняя подвеска</option>
-        <option value="Задняя подвеска">Задняя подвеска</option>
-        <option value="Сцепление">Сцепление</option>
-        <option value="КПП">КПП</option>
-        <option value="Система охлаждения">Система охлаждения</option>
-        <option value="Топливная система">Топливная система</option>
-        <option value="Электросистема">Электросистема</option>
-        <option value="Управление">Управление</option>
-        <option value="Выхлопная система">Выхлопная система</option>
-        <option value="Кузов">Кузов</option>
-        <option value="Салон">Салон</option>
-        <option value="Щетки стеклоомывателя">Щетки стеклоомывателя</option>
-        <option value="Инструменты">Инструменты</option>
-        <option value="Болты и гайки">Болты и гайки</option>
-    </select>
-    <input type="text" id="searchInput" placeholder="Поиск по названию или артикулу...">
-</div>
+    <div class="filters">
+        <select id="modelSelect">
+            <option value="">Все модели</option>
+        </select>
+        <select id="categorySelect">
+            <option value="">Все категории</option>
+            <option value="Двигатель">Двигатель</option>
+            <option value="Тормоза">Тормозная система</option>
+            <option value="Передняя подвеска">Передняя подвеска</option>
+            <option value="Задняя подвеска">Задняя подвеска</option>
+            <option value="Система охлаждения">Система охлаждения</option>
+            <option value="Сцепление">Сцепление</option>
+            <option value="КПП">КПП</option>
+            <option value="Топливная система">Топливная система</option>
+            <option value="Электросистема">Электросистема</option>
+            <option value="Управление">Управление</option>
+            <option value="Выхлопная система">Выхлопная система</option>
+            <option value="Кузов">Кузов</option>
+            <option value="Салон">Салон</option>
+            <option value="Щетки стеклоомывателя">Щетки стеклоомывателя</option>
+            <option value="Инструменты">Инструменты</option>
+            <option value="Болты и гайки">Болты и гайки</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="Поиск по названию или артикулу...">
+    </div>
 
     <div class="parts-list" id="partsContainer"></div>
 
-<script>
-const database = {
-    models: [
-        {code: '1111', name: 'Ока'},
-        {code: '2101', name: 'ВАЗ 2101'},
-        {code: '2102', name: 'ВАЗ 2102'},
-        {code: '2103', name: 'ВАЗ 2103'},
-        {code: '2104', name: 'ВАЗ 2104'},
-        {code: '2105', name: 'ВАЗ 2105'},
-        {code: '2106', name: 'ВАЗ 2106'},
-        {code: '2107', name: 'ВАЗ 2107'},
-        {code: '2107i', name: 'ВАЗ 2107i'},
-        {code: '2108', name: 'ВАЗ 2108'},
-        {code: '2108i', name: 'ВАЗ 2108i'},
-        {code: '2109', name: 'ВАЗ 2109'},
-        {code: '21099', name: 'ВАЗ 21099'},
-        {code: '2110', name: 'ВАЗ 2110'},
-        {code: '2111', name: 'ВАЗ 2111'},
-        {code: '2112', name: 'ВАЗ 2112'},
-        {code: '2113', name: 'ВАЗ 2113'},
-        {code: '2114', name: 'ВАЗ 2114'},
-        {code: '2115', name: 'ВАЗ 2115'},
-        {code: '2121', name: 'ВАЗ 2121'},
-        {code: '21213', name: 'ВАЗ 21213'},
-        {code: '21214', name: 'ВАЗ 21214'},
-        {code: '2131', name: 'ВАЗ 2131'},
-        {code: '2123', name: 'ВАЗ 2123 Шевроле'},
-        {code: '1118', name: 'ВАЗ 1118 Калина'},
-        {code: '2192', name: 'ВАЗ 2192 Калина 2'},
-        {code: 'Largus', name: 'Ларгус'},
-        {code: '2170', name: 'ВАЗ 2170 Приора'},
-        {code: '2180', name: 'ВАЗ 2180 Веста'},
-        {code: '2190', name: 'Lada 2190 Granta'},
-        {code: 'XRAY', name: 'XRAY'}
-    ],
+    <div class="reference-section">
+        <h2>Справочник двигателей АвтоВАЗ</h2>
+        <div id="engineReference"></div>
+    </div>
 
-    parts: [
-       {
-            name: 'Башмак натяжителя цепи 2101',
-            article: '21030-1006090-11',
-            price: 300,
-            image: 'images/2101-2107/Двигатель/башмак натяжителя цепи 2101.jpg',
-            compatible: ['2101', '2102', '2103', '2104', '2105','2106','2107'],
-            category: 'Двигатель',
-            notes: ''
-        },
-{
-            name: 'ГРМ в сборе 2103',
-            article: '2101-',
-            price: 6000,
-            image: 'images/2101-2107/Двигатель/грм в сборе 2103.png',
-            compatible: ['2103', '2104', '2106','2121'],
-            category: 'Двигатель'
-        },
-        // ... (остальные запчасти, можно добавлять поле notes по желанию)
+    <script>
+        // ==================== ДАННЫЕ ====================
+        const database = {
+            models: [
+                {code: '1111', name: 'Ока'},
+                {code: '2101', name: 'ВАЗ 2101'},
+                {code: '2102', name: 'ВАЗ 2102'},
+                {code: '2103', name: 'ВАЗ 2103'},
+                {code: '2104', name: 'ВАЗ 2104'},
+                {code: '2105', name: 'ВАЗ 2105'},
+                {code: '2106', name: 'ВАЗ 2106'},
+                {code: '2107', name: 'ВАЗ 2107'},
+                {code: '2108', name: 'ВАЗ 2108'},
+                {code: '2109', name: 'ВАЗ 2109'},
+                {code: '21099', name: 'ВАЗ 21099'},
+                {code: '2110', name: 'ВАЗ 2110'},
+                {code: '2111', name: 'ВАЗ 2111'},
+                {code: '2112', name: 'ВАЗ 2112'},
+                {code: '2113', name: 'ВАЗ 2113'},
+                {code: '2114', name: 'ВАЗ 2114'},
+                {code: '2115', name: 'ВАЗ 2115'},
+                {code: '2121', name: 'ВАЗ 2121 Нива старая'},
+                {code: '21213', name: 'ВАЗ 21213 карбюраторная'},
+                {code: '21214', name: 'ВАЗ 21214 инжекторная'},
+                {code: '2131', name: 'ВАЗ 2131 5-дверка'},
+                {code: '2123', name: 'ВАЗ 2123 Шевроле'},
+                {code: '1118', name: 'ВАЗ 1118 Калина'},
+                {code: '2192', name: 'ВАЗ 2192 Калина 2'},
+                {code: 'Largus', name: 'Ларгус'},
+                {code: '2170', name: 'ВАЗ 2170 Приора'},
+                {code: '2180', name: 'ВАЗ 2180 Веста'},
+                {code: '2190', name: 'Lada 2190 Granta'},
+                {code: 'XRAY', name: 'XRAY'}
+            ],
 
-        // Пример для тормозных колодок с заметкой
-        {
-            name: 'Тормозные колодки',
-            article: '2108-2904',
-            price: 1500,
-            image: 'images/brake_pads.jpg',
-            compatible: ['2108', '2109', '2110'],
-            category: 'Тормоза',
-            notes: 'Аналог: Ferodo FDB123, TRW GDB456. Также подходят на ВАЗ 2111, 2112.'
-        },
-        {
-            name: 'Свечи зажигания',
-            article: 'A17DVRM',
-            price: 250,
-            image: 'images/spark_plug.jpg',
-            compatible: ['2101', '2103', '2106', '2121'],
-            category: 'Двигатель',
-            notes: 'Аналог: Denso W20EPR-U, Champion RN9YC. Для Нивы 2121 используйте с зазором 0.8 мм.'
+            // ⚠️ ВСТАВЬТЕ СВОЙ МАССИВ ЗАПЧАСТЕЙ СЮДА ⚠️
+            parts: [
+                // Пример записи с одним изображением
+                {
+                    name: 'Ремень генератора',
+                    article: '2101-1308020',
+                    price: 500,
+                    image: 'images/belt.jpg',
+                    compatible: ['2101','2102','2103','2104','2105','2106','2107'],
+                    category: 'Ремни',
+                    notes: 'Аналог: Gates 1234, Dayco 5678'
+                },
+                // Пример записи с несколькими изображениями
+                {
+                    name: 'Свечи зажигания',
+                    article: 'A17DVRM',
+                    price: 250,
+                    images: [
+                        'images/spark1.jpg',
+                        'images/spark2.jpg',
+                        'images/spark3.jpg'
+                    ],
+                    compatible: ['2101','2103','2106','2121'],
+                    category: 'Двигатель',
+                    notes: 'Комплект 4 шт. Аналог: NGK BPR6ES'
+                }
+                // ... добавьте остальные детали
+            ],
+
+            // Справочник двигателей
+            engines: [
+                { code: "2101", name: "1.2 л, 64 л.с., карбюратор", models: ["2101", "2102"] },
+                { code: "2103", name: "1.5 л, 77 л.с., карбюратор", models: ["2103", "2106"] },
+                { code: "2106", name: "1.6 л, 80 л.с., карбюратор", models: ["2106", "2121"] },
+                { code: "2108", name: "1.3 л, 69 л.с., карбюратор", models: ["2108", "2109", "21099"] },
+                { code: "2110", name: "1.5 л, 78 л.с., инжектор", models: ["2110", "2111", "2112"] },
+                { code: "21126", name: "1.6 л, 98 л.с., инжектор", models: ["2170", "2190"] },
+                { code: "21214", name: "1.7 л, 83 л.с., инжектор", models: ["21214", "2131"] }
+            ]
+        };
+
+        // ==================== ФУНКЦИИ ====================
+        function initFilters() {
+            const select = document.getElementById('modelSelect');
+            database.models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.code;
+                option.textContent = model.name;
+                select.appendChild(option);
+            });
         }
-    ]
-};
 
-// Инициализация фильтров
-function initFilters() {
-    const select = document.getElementById('modelSelect');
-    database.models.forEach(model => {
-        const option = document.createElement('option');
-        option.value = model.code;
-        option.textContent = model.name;
-        select.appendChild(option);
-    });
-}
+        // Отображение карточек запчастей
+        function showParts(parts) {
+            const container = document.getElementById('partsContainer');
+            container.innerHTML = '';
 
-// Отображение запчастей
-function showParts(parts) {
-    const container = document.getElementById('partsContainer');
-    container.innerHTML = '';
+            if (parts.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#666">Ничего не найдено</p>';
+                return;
+            }
 
-    if (parts.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#666">Ничего не найдено</p>';
-        return;
-    }
+            const fragment = document.createDocumentFragment();
 
-    parts.forEach(part => {
-        const card = document.createElement('div');
-        card.className = 'part-card';
-        card.innerHTML = `
-            <img src="${part.image}" class="part-image" alt="${part.name}">
-            <h3>${part.name}</h3>
-            <p>Артикул: ${part.article}</p>
-            <div class="price">${part.price.toLocaleString('ru-RU')} ₽</div>
-            ${part.notes ? `<div class="part-notes">📝 ${part.notes}</div>` : ''}
-            <div class="compatibility">
-                <p>Подходит для:</p>
-                <div class="part-models">
-                    ${part.compatible.map(code => {
-                        const model = database.models.find(m => m.code === code);
-                        return `<div class="model-chip">${model.name}</div>`;
-                    }).join('')}
+            parts.forEach(part => {
+                // Определяем массив изображений
+                const images = part.images || (part.image ? [part.image] : []);
+                const mainImage = images[0] || '';
+
+                // Генерация миниатюр (если их больше одного)
+                let thumbnailsHtml = '';
+                if (images.length > 1) {
+                    thumbnailsHtml = '<div class="thumbnails">';
+                    images.forEach(img => {
+                        thumbnailsHtml += `
+                            <img src="${img}" 
+                                 class="thumbnail" 
+                                 loading="lazy"
+                                 onclick="this.closest('.part-card').querySelector('.part-image').src='${img}'" 
+                                 onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%3E%3Crect%20width%3D%2260%22%20height%3D%2260%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2210%22%20y%3D%2235%22%20font-family%3D%22Arial%22%20font-size%3D%2212%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                        `;
+                    });
+                    thumbnailsHtml += '</div>';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'part-card';
+                card.innerHTML = `
+                    <div class="image-container">
+                        <img src="${mainImage}" 
+                             class="part-image" 
+                             alt="${part.name}" 
+                             loading="lazy"
+                             onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                    </div>
+                    ${thumbnailsHtml}
+                    <h3>${part.name}</h3>
+                    <p>Артикул: ${part.article}</p>
+                    <div class="price">${part.price.toLocaleString('ru-RU')} ₽</div>
+                    ${part.notes ? `<div class="part-notes">📝 ${part.notes}</div>` : ''}
+                    <div class="compatibility">
+                        <p>Подходит для:</p>
+                        <div class="part-models">
+                            ${part.compatible.map(code => {
+                                const model = database.models.find(m => m.code === code);
+                                return model ? `<div class="model-chip">${model.name}</div>` : '';
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+                fragment.appendChild(card);
+            });
+
+            container.appendChild(fragment);
+        }
+
+        // Фильтрация с debounce (чтобы не дёргать на каждый символ)
+        let filterTimeout;
+        function filterParts() {
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                const selectedModel = document.getElementById('modelSelect').value;
+                const searchText = document.getElementById('searchInput').value.toLowerCase();
+                const selectedCategory = document.getElementById('categorySelect').value;
+
+                const filtered = database.parts.filter(part => {
+                    const matchesModel = !selectedModel || part.compatible.includes(selectedModel);
+                    const matchesSearch = part.name.toLowerCase().includes(searchText) || 
+                                       part.article.toLowerCase().includes(searchText);
+                    const matchesCategory = !selectedCategory || part.category === selectedCategory;
+                    return matchesModel && matchesSearch && matchesCategory;
+                });
+
+                showParts(filtered);
+            }, 300); // ждём 300 мс после последнего ввода
+        }
+
+        // Справочник двигателей
+        function showEngineReference() {
+            const container = document.getElementById('engineReference');
+            if (!container) return;
+            container.innerHTML = database.engines.map(engine => `
+                <div class="engine-card">
+                    <div class="engine-code">Двигатель ${engine.code}</div>
+                    <div>${engine.name}</div>
+                    <div class="engine-models">
+                        ${engine.models.map(code => {
+                            const model = database.models.find(m => m.code === code);
+                            return model ? `<span class="engine-model-chip">${model.name}</span>` : '';
+                        }).join('')}
+                    </div>
                 </div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
+            `).join('');
+        }
 
-// Фильтрация данных
-function filterParts() {
-    const selectedModel = document.getElementById('modelSelect').value;
-    const searchText = document.getElementById('searchInput').value.toLowerCase();
-    const selectedCategory = document.getElementById('categorySelect').value;
-
-    const filtered = database.parts.filter(part => {
-        const matchesModel = !selectedModel || part.compatible.includes(selectedModel);
-        const matchesSearch = part.name.toLowerCase().includes(searchText) || 
-                           part.article.toLowerCase().includes(searchText);
-        const matchesCategory = !selectedCategory || part.category === selectedCategory;
-        
-        return matchesModel && matchesSearch && matchesCategory;
-    });
-
-    showParts(filtered);
-}
-
-// Инициализация
-document.addEventListener('DOMContentLoaded', () => {
-    initFilters();
-    document.getElementById('modelSelect').addEventListener('change', filterParts);
-    document.getElementById('searchInput').addEventListener('input', filterParts);
-    document.getElementById('categorySelect').addEventListener('change', filterParts);
-    filterParts();
-});
-</script>
+        // ==================== ЗАПУСК ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initFilters();
+            showEngineReference();
+            // При изменении любого фильтра запускаем filterParts
+            document.getElementById('modelSelect').addEventListener('change', filterParts);
+            document.getElementById('searchInput').addEventListener('input', filterParts);
+            document.getElementById('categorySelect').addEventListener('change', filterParts);
+            filterParts(); // первое отображение
+        });
+    </script>
 </body>
 </html>
-
-
-
-
-
-
-
