@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автозапчасти — умный поиск</title>
+    <title>Автозапчасти — умный поиск с корзиной</title>
     <style>
         * {
             box-sizing: border-box;
@@ -228,6 +228,9 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             cursor: pointer;
             transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* чтобы карточки были одной высоты в ряду */
         }
 
         .part-card:hover {
@@ -277,6 +280,9 @@
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 10px;
+            max-height: 80px;
+            overflow-y: auto;
+            margin-bottom: 10px;
         }
 
         .model-chip {
@@ -404,7 +410,7 @@
             padding: 8px 12px;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: auto; /* прижимаем кнопку к низу карточки */
             width: 100%;
         }
 
@@ -4555,7 +4561,7 @@
             let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             
             if (scrollTop > lastScrollTop && scrollTop > 50) {
-                // Скролл вниз (и проехали больше 50px) – скрываем фильтры
+                // Скролл вниз – скрываем фильтры
                 if (!filtersBlock.classList.contains('hidden')) {
                     filtersBlock.classList.add('hidden');
                 }
