@@ -49,7 +49,6 @@
             border-left-color: #f39c12;
         }
 
-        /* Тёмная тема для элементов ввода */
         body.dark select,
         body.dark input {
             background: #0f3460;
@@ -150,7 +149,6 @@
             color: #ccc;
         }
 
-        /* Автодополнение */
         .autocomplete-items {
             position: absolute;
             top: 100%;
@@ -190,16 +188,24 @@
 
         .clear-filters-btn {
             background: #e74c3c;
-    color: white;
-    border: none;
-    padding: 6px 12px;      /* уменьшенные отступы */
-    border-radius: 20px;    /* скругление, как у чипсов */
-    cursor: pointer;
-    font-size: 13px;
-    width: auto;            /* вместо 100% */
-    margin-top: 5px;
-    display: inline-block;  /* чтобы встала в строку */
-}
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            width: auto;
+            display: inline-block;
+            transition: 0.2s;
+        }
+        .clear-filters-btn:hover {
+            background: #c0392b;
+        }
+        .clear-btn-wrapper {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+        }
 
         .parts-list {
             display: grid;
@@ -236,6 +242,27 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
+        }
+
+        .thumbnails {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .thumbnail:hover {
+            opacity: 1;
         }
 
         .part-models {
@@ -383,6 +410,15 @@
         .search-row .search-group {
             flex: 1;
         }
+
+        /* Стили для изображения в модальном окне */
+        .modal-image {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
@@ -425,11 +461,14 @@
                 <div id="autocompleteList" class="autocomplete-items" style="display: none;"></div>
             </div>
             <div class="search-group">
-                <label>⚡ Уточняющий фильтр</label>
+                <label>⚡ Уточняющий фильтр (необязательный)</label>
                 <input type="text" id="refineInput" placeholder="Введите для уточнения...">
             </div>
         </div>
-        <button id="clearFiltersBtn" class="clear-filters-btn">🧹 Очистить все фильтры</button>
+
+        <div class="clear-btn-wrapper">
+            <button id="clearFiltersBtn" class="clear-filters-btn">🧹 Сбросить фильтры</button>
+        </div>
     </div>
 
     <div class="parts-list" id="partsContainer"></div>
@@ -459,17 +498,15 @@
     </div>
 
     <script>
-        // ==================== КЕШИРОВАНИЕ ДАННЫХ В localStorage ====================
+        // ==================== КЕШИРОВАНИЕ ДАННЫХ ====================
         let database;
 
-        // Функция загрузки базы данных (сначала из localStorage, если нет — из дефолтных данных)
         function loadDatabase() {
             const cached = localStorage.getItem('autoparts_database');
             if (cached) {
                 return JSON.parse(cached);
             } else {
-                // Здесь определите вашу БД (модели, запчасти, двигатели)
-                // Это пример, замените своими данными
+                // ⚠️ ВСТАВЬТЕ СВОЙ МАССИВ ЗАПЧАСТЕЙ ВМЕСТО ПРИМЕРА ⚠️
                 const defaultDB = {
                     models: [
                         {code: '2101-2107', name: '2101-2107'},
@@ -488,7 +525,6 @@
                         {code: '2190', name: '2190 Granta'},
                         {code: 'XRAY', name: 'XRAY'}
                     ],
-
 
             // ВСЕ ВАШИ ЗАПЧАСТИ (полный массив)
             parts: [
@@ -4536,7 +4572,7 @@
             document.getElementById('cartTotal').innerHTML = `Итого: ${total} ₽`;
         }
 
-        // ==================== СОСТОЯНИЕ ФИЛЬТРОВ В URL ====================
+        // ==================== URL ФИЛЬТРОВ ====================
         function updateURL() {
             const params = new URLSearchParams();
             const model = document.getElementById('modelSelect').value;
@@ -4621,7 +4657,7 @@
             filterParts();
         });
 
-        // ==================== ФИЛЬТРАЦИЯ ====================
+        // ==================== ФИЛЬТРАЦИЯ И ОТРИСОВКА ====================
         function getCompatibleModelsString(compatibleCodes) {
             return compatibleCodes.map(code => {
                 const model = database.models.find(m => m.code === code);
@@ -4706,21 +4742,28 @@
             container.appendChild(fragment);
         }
 
-        // ==================== ПОДРОБНАЯ КАРТОЧКА ====================
+        // ==================== ПОДРОБНАЯ КАРТОЧКА (МОДАЛЬНОЕ ОКНО) ====================
         function openProductModal(part) {
             const modal = document.getElementById('productModal');
             const modalContent = document.getElementById('modalContent');
             const images = part.images || (part.image ? [part.image] : []);
-            let imageHtml = `<div class="image-container" style="margin-bottom:10px;"><img src="${images[0] || ''}" style="width:100%;" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'"></div>`;
+            const mainImage = images[0] || '';
+
+            // Генерация миниатюр для модального окна
+            let thumbnailsHtml = '';
             if (images.length > 1) {
-                imageHtml += '<div class="thumbnails">';
+                thumbnailsHtml = '<div class="thumbnails" style="margin-top:10px;">';
                 images.forEach(img => {
-                    imageHtml += `<img src="${img}" class="thumbnail" style="width:80px;" onclick="document.getElementById('modalMainImage').src='${img}'">`;
+                    thumbnailsHtml += `<img src="${img}" class="thumbnail" style="width:80px;" onclick="document.getElementById('modalMainImage').src='${img}'">`;
                 });
-                imageHtml += '</div>';
+                thumbnailsHtml += '</div>';
             }
+
             modalContent.innerHTML = `
-                <div id="modalMainImageContainer">${imageHtml}</div>
+                <div style="text-align:center;">
+                    <img id="modalMainImage" src="${mainImage}" class="modal-image" alt="${part.name}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                </div>
+                ${thumbnailsHtml}
                 <h2>${part.name}</h2>
                 <p><strong>Артикул:</strong> ${part.article}</p>
                 <p><strong>Цена:</strong> ${part.price.toLocaleString('ru-RU')} ₽</p>
@@ -4803,7 +4846,7 @@
             if (e.target !== searchInputElem) autocompleteListElem.style.display = 'none';
         });
 
-        // Фильтрация с debounce и обновлением URL
+        // Debounced фильтр
         let filterTimeout;
         function debouncedFilter() {
             clearTimeout(filterTimeout);
