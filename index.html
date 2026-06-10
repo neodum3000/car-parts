@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автозапчасти — умный поиск с корзиной</title>
+    <title>Автозапчасти — поиск с корзиной и справочником двигателей</title>
     <style>
-        /* ... все стили такие же, как в вашем последнем рабочем варианте ... */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -501,11 +500,10 @@
                 <div id="autocompleteList" class="autocomplete-items" style="display: none;"></div>
             </div>
             <div class="search-group">
-                <label>⚡ Уточняющий фильтр</label>
+                <label>⚡ Уточняющий фильтр (необязательный)</label>
                 <input type="text" id="refineInput" placeholder="Введите для уточнения...">
             </div>
         </div>
-
         <div class="clear-btn-wrapper">
             <button id="clearFiltersBtn" class="clear-filters-btn">🧹 Сбросить фильтры</button>
         </div>
@@ -538,37 +536,45 @@
     <button id="scrollToTopBtn" class="scroll-to-top" title="Наверх">⬆</button>
 
     <script>
-        // ==================== КЕШИРОВАНИЕ ДАННЫХ ====================
-        let database;
+        // ==================== ДАННЫЕ ====================
+        // Модели автомобилей (код -> отображаемое имя)
+        const models = [
+            {code: '2101-2107', name: '2101-2107'},
+            {code: '2107i', name: '2107i'},
+            {code: '2108-21099', name: '2108-21099'},
+            {code: '2108i-2115', name: '2108i-2115'},
+            {code: '2110-2112', name: '2110-2112'},
+            {code: '2121', name: '2121'},
+            {code: '21214', name: '21214'},
+            {code: '2123', name: '2123'},
+            {code: '1118', name: '1118 Калина'},
+            {code: '2192', name: '2192 Калина 2'},
+            {code: 'Largus', name: 'Ларгус'},
+            {code: '2170', name: 'Приора'},
+            {code: '2180', name: '2180 Веста'},
+            {code: '2190', name: '2190 Granta'},
+            {code: 'XRAY', name: 'XRAY'}
+        ];
 
-        function loadDatabase() {
-            const cached = localStorage.getItem('autoparts_database');
-            if (cached) {
-                return JSON.parse(cached);
-            } else {
-                // ⚠️ ВСТАВЬТЕ СВОЙ МАССИВ ЗАПЧАСТЕЙ ВМЕСТО ПРИМЕРА ⚠️
-                const defaultDB = {
-                    models: [
-                        {code: '2101-2107', name: '2101-2107'},
-                        {code: '2107i', name: '2107i'},
-                        {code: '2108-21099', name: '2108-21099'},
-                        {code: '2108i-2115', name: '2108i-2115'},
-                        {code: '2110-2112', name: '2110-2112'},
-                        {code: '2121', name: '2121'},
-                        {code: '21214', name: '21214'},
-                        {code: '2123', name: '2123'},
-                        {code: '1118', name: '1118 Калина'},
-                        {code: '2192', name: '2192 Калина 2'},
-                        {code: 'Largus', name: 'Ларгус'},
-                        {code: '2170', name: 'Приора'},
-                        {code: '2180', name: '2180 Веста'},
-                        {code: '2190', name: '2190 Granta'},
-                        {code: 'XRAY', name: 'XRAY'}
-                    ],
+        // Справочник двигателей
+        const engines = [
+            { code: "2101", name: "1.2 л, 64 л.с., карбюратор", models: ["2101-2107"] },
+            { code: "2103", name: "1.5 л, 77 л.с., карбюратор", models: ["2101-2107"] },
+            { code: "2106", name: "1.6 л, 80 л.с., карбюратор", models: ["2101-2107","2121"] },
+            { code: "2108", name: "1.3 л, 69 л.с., карбюратор", models: ["2108-21099"] },
+            { code: "21083", name: "1.5 л, 72 л.с., инжектор", models: ["2108i-2115"] },
+            { code: "2110", name: "1.5 л, 78 л.с., инжектор", models: ["2110-2112"] },
+            { code: "2111", name: "1.5 л, 78 л.с., инжектор (16 кл.)", models: ["2110-2112"] },
+            { code: "2112", name: "1.6 л, 92 л.с., инжектор (16 кл.)", models: ["2110-2112"] },
+            { code: "21126", name: "1.6 л, 98 л.с., инжектор (16 кл.)", models: ["2170","2190"] },
+            { code: "21214", name: "1.7 л, 83 л.с., инжектор", models: ["21214","2123"] },
+            { code: "11186", name: "1.4 л, 89 л.с., инжектор (16 кл.)", models: ["1118","2192"] },
+            { code: "K4M", name: "1.6 л, 106 л.с., инжектор (Renault)", models: ["Largus","XRAY"] }
+        ];
 
-            // ВСЕ ВАШИ ЗАПЧАСТИ (полный массив)
-            parts: [
-                {
+        // ⚠️ ВАШ МАССИВ ЗАПЧАСТЕЙ (замените пример на свои данные) ⚠️
+        const defaultParts = [
+            {
                     name: 'Ремень генератора 2101',
                     article: '2101-1308020',
                     price: 315,
@@ -4694,44 +4700,33 @@
                     category: 'Двигатель',
                     notes: 'Комплект 4 шт. Аналог: NGK BPR6ES'
                 }
-            ],
+            ];
 
-             // Справочник двигателей
-            engines: [
-                        { code: "2101", name: "1.2 л, 64 л.с., карбюратор", models: ["2101", "2102"] },
-                        { code: "2103", name: "1.5 л, 77 л.с., карбюратор", models: ["2103", "2106"] },
-                        { code: "2106", name: "1.6 л, 80 л.с., карбюратор", models: ["2106", "2121"] },
-                        { code: "2108", name: "1.3 л, 69 л.с., карбюратор", models: ["2108", "2109", "21099"] },
-                        { code: "2110", name: "1.5 л, 78 л.с., инжектор", models: ["2110", "2111", "2112"] },
-                        { code: "126", name: "1.6 л, 98 л.с., инжектор, 16 клапаннов", models: ["2170", "2190"] },
-                        { code: "124", name: "1.7 л, 83 л.с., инжектор", models: ["2110", "2108"] }
-                    ]
-                };
-                localStorage.setItem('autoparts_database', JSON.stringify(defaultDB));
-                return defaultDB;
+        // ==================== КЕШИРОВАНИЕ ====================
+        let parts = [];
+
+        function loadDatabase() {
+            const cached = localStorage.getItem('autoparts_database');
+            if (cached) {
+                try {
+                    const data = JSON.parse(cached);
+                    parts = data.parts || [];
+                    return;
+                } catch(e) {
+                    console.warn('Ошибка парсинга кеша', e);
+                }
             }
+            // Если кеша нет или он повреждён, используем defaultParts
+            parts = defaultParts;
+            saveToLocalStorage();
         }
 
-        database = loadDatabase();
+        function saveToLocalStorage() {
+            const data = { parts: parts };
+            localStorage.setItem('autoparts_database', JSON.stringify(data));
+        }
 
-        // ==================== УМНОЕ СКРЫТИЕ ФИЛЬТРОВ ====================
-        let lastScrollTop = 0;
-        const filtersBlock = document.getElementById('filtersBlock');
-
-        window.addEventListener('scroll', function() {
-            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            
-            if (scrollTop > lastScrollTop && scrollTop > 50) {
-                if (!filtersBlock.classList.contains('hidden')) {
-                    filtersBlock.classList.add('hidden');
-                }
-            } else if (scrollTop < lastScrollTop) {
-                if (filtersBlock.classList.contains('hidden')) {
-                    filtersBlock.classList.remove('hidden');
-                }
-            }
-            lastScrollTop = scrollTop;
-        });
+        loadDatabase();
 
         // ==================== КОРЗИНА ====================
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -4784,7 +4779,7 @@
                 total += itemTotal;
                 html += `
                     <div class="cart-item">
-                        <div><strong>${item.name}</strong><br>${item.article}<br>${item.price}₽ x ${item.quantity} = ${itemTotal}₽</div>
+                        <div><strong>${escapeHtml(item.name)}</strong><br>${escapeHtml(item.article)}<br>${item.price}₽ x ${item.quantity} = ${itemTotal}₽</div>
                         <button onclick="removeFromCart(${idx})">Удалить</button>
                     </div>
                 `;
@@ -4793,7 +4788,162 @@
             document.getElementById('cartTotal').innerHTML = `Итого: ${total} ₽`;
         }
 
-        // ==================== URL ФИЛЬТРОВ ====================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // ==================== УМНЫЙ СКРОЛЛ ====================
+        let lastScrollTop = 0;
+        const filtersBlock = document.getElementById('filtersBlock');
+
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                if (!filtersBlock.classList.contains('hidden')) {
+                    filtersBlock.classList.add('hidden');
+                }
+            } else if (scrollTop < lastScrollTop) {
+                if (filtersBlock.classList.contains('hidden')) {
+                    filtersBlock.classList.remove('hidden');
+                }
+            }
+            lastScrollTop = scrollTop;
+        });
+
+        // ==================== ОБЩИЕ ФУНКЦИИ ====================
+        function getCompatibleModelsString(compatibleCodes) {
+            return compatibleCodes.map(code => {
+                const model = models.find(m => m.code === code);
+                return model ? model.name : code;
+            }).join(' ').toLowerCase();
+        }
+
+        function matchesSearchText(part, searchText) {
+            if (!searchText) return true;
+            const modelsString = getCompatibleModelsString(part.compatible);
+            return part.name.toLowerCase().includes(searchText) ||
+                   part.article.toLowerCase().includes(searchText) ||
+                   (part.notes && part.notes.toLowerCase().includes(searchText)) ||
+                   modelsString.includes(searchText);
+        }
+
+        function filterParts() {
+            const selectedModel = document.getElementById('modelSelect').value;
+            const selectedCategory = document.getElementById('categorySelect').value;
+            const mainSearch = document.getElementById('searchInput').value.toLowerCase().trim();
+            const refineSearch = document.getElementById('refineInput').value.toLowerCase().trim();
+
+            const filtered = parts.filter(part => {
+                const matchesModel = !selectedModel || part.compatible.includes(selectedModel);
+                const matchesCategory = !selectedCategory || part.category === selectedCategory;
+                const matchesMain = matchesSearchText(part, mainSearch);
+                const matchesRefine = matchesSearchText(part, refineSearch);
+                return matchesModel && matchesCategory && matchesMain && matchesRefine;
+            });
+            showParts(filtered);
+        }
+
+        function showParts(partsArray) {
+            const container = document.getElementById('partsContainer');
+            container.innerHTML = '';
+            if (partsArray.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#666">Ничего не найдено</p>';
+                return;
+            }
+            const fragment = document.createDocumentFragment();
+            partsArray.forEach(part => {
+                const images = part.images || (part.image ? [part.image] : []);
+                const mainImage = images[0] || '';
+                let thumbnailsHtml = '';
+                if (images.length > 1) {
+                    thumbnailsHtml = '<div class="thumbnails">';
+                    images.forEach(img => {
+                        thumbnailsHtml += `<img src="${img}" class="thumbnail" loading="lazy" onclick="event.stopPropagation(); this.closest('.part-card').querySelector('.part-image').src='${img}'">`;
+                    });
+                    thumbnailsHtml += '</div>';
+                }
+                const card = document.createElement('div');
+                card.className = 'part-card';
+                card.innerHTML = `
+                    <div class="image-container">
+                        <img src="${mainImage}" class="part-image" alt="${escapeHtml(part.name)}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                    </div>
+                    ${thumbnailsHtml}
+                    <h3>${escapeHtml(part.name)}</h3>
+                    <p>Артикул: ${escapeHtml(part.article)}</p>
+                    <div class="price">${part.price.toLocaleString('ru-RU')} ₽</div>
+                    ${part.notes ? `<div class="part-notes">📝 ${escapeHtml(part.notes)}</div>` : ''}
+                    <div class="part-models">
+                        ${part.compatible.map(code => {
+                            const model = models.find(m => m.code === code);
+                            return model ? `<div class="model-chip">${escapeHtml(model.name)}</div>` : '';
+                        }).join('')}
+                    </div>
+                    <button class="add-to-cart-btn">🛒 Добавить в корзину</button>
+                `;
+                card.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('add-to-cart-btn')) {
+                        e.stopPropagation();
+                        addToCart(part);
+                    } else {
+                        openProductModal(part);
+                    }
+                });
+                fragment.appendChild(card);
+            });
+            container.appendChild(fragment);
+        }
+
+        function openProductModal(part) {
+            const modal = document.getElementById('productModal');
+            const modalContent = document.getElementById('modalContent');
+            const images = part.images || (part.image ? [part.image] : []);
+            const mainImage = images[0] || '';
+
+            let thumbnailsHtml = '';
+            if (images.length > 1) {
+                thumbnailsHtml = '<div class="thumbnails" style="margin-top:10px;">';
+                images.forEach(img => {
+                    thumbnailsHtml += `<img src="${img}" class="thumbnail" style="width:80px;" onclick="document.getElementById('modalMainImage').src='${img}'">`;
+                });
+                thumbnailsHtml += '</div>';
+            }
+
+            modalContent.innerHTML = `
+                <div style="text-align:center;">
+                    <img id="modalMainImage" src="${mainImage}" class="modal-image" alt="${escapeHtml(part.name)}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                </div>
+                ${thumbnailsHtml}
+                <h2>${escapeHtml(part.name)}</h2>
+                <p><strong>Артикул:</strong> ${escapeHtml(part.article)}</p>
+                <p><strong>Цена:</strong> ${part.price.toLocaleString('ru-RU')} ₽</p>
+                <p><strong>Категория:</strong> ${escapeHtml(part.category)}</p>
+                ${part.notes ? `<div class="part-notes">📝 ${escapeHtml(part.notes)}</div>` : ''}
+                <p><strong>Подходит для:</strong></p>
+                <div class="part-models">
+                    ${part.compatible.map(code => {
+                        const model = models.find(m => m.code === code);
+                        return model ? `<div class="model-chip">${escapeHtml(model.name)}</div>` : '';
+                    }).join('')}
+                </div>
+                <button class="add-to-cart-btn" style="margin-top:20px;">🛒 Добавить в корзину</button>
+            `;
+            modal.style.display = 'block';
+            const addBtn = modalContent.querySelector('.add-to-cart-btn');
+            addBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                addToCart(part);
+                modal.style.display = 'none';
+            });
+        }
+
+        // ==================== ФИЛЬТРЫ URL ====================
         function updateURL() {
             const params = new URLSearchParams();
             const model = document.getElementById('modelSelect').value;
@@ -4830,12 +4980,12 @@
             if (!query) return [];
             const lowerQuery = query.toLowerCase();
             const suggestions = new Set();
-            database.parts.forEach(part => {
+            parts.forEach(part => {
                 if (part.name.toLowerCase().includes(lowerQuery)) suggestions.add(part.name);
                 if (part.article.toLowerCase().includes(lowerQuery)) suggestions.add(part.article);
                 if (part.notes && part.notes.toLowerCase().includes(lowerQuery)) suggestions.add(part.notes.slice(0, 50));
             });
-            database.models.forEach(model => {
+            models.forEach(model => {
                 if (model.name.toLowerCase().includes(lowerQuery)) suggestions.add(model.name);
             });
             return Array.from(suggestions).slice(0, 10);
@@ -4851,7 +5001,7 @@
                 listElement.style.display = 'none';
                 return;
             }
-            listElement.innerHTML = suggestions.map(s => `<div class="autocomplete-item">${s}</div>`).join('');
+            listElement.innerHTML = suggestions.map(s => `<div class="autocomplete-item">${escapeHtml(s)}</div>`).join('');
             listElement.style.display = 'block';
             Array.from(listElement.children).forEach(item => {
                 item.addEventListener('click', () => {
@@ -4878,139 +5028,10 @@
             filterParts();
         });
 
-        // ==================== ФИЛЬТРАЦИЯ И ОТРИСОВКА ====================
-        function getCompatibleModelsString(compatibleCodes) {
-            return compatibleCodes.map(code => {
-                const model = database.models.find(m => m.code === code);
-                return model ? model.name : code;
-            }).join(' ').toLowerCase();
-        }
-
-        function matchesSearchText(part, searchText) {
-            if (!searchText) return true;
-            const modelsString = getCompatibleModelsString(part.compatible);
-            return part.name.toLowerCase().includes(searchText) ||
-                   part.article.toLowerCase().includes(searchText) ||
-                   (part.notes && part.notes.toLowerCase().includes(searchText)) ||
-                   modelsString.includes(searchText);
-        }
-
-        function filterParts() {
-            const selectedModel = document.getElementById('modelSelect').value;
-            const selectedCategory = document.getElementById('categorySelect').value;
-            const mainSearch = document.getElementById('searchInput').value.toLowerCase().trim();
-            const refineSearch = document.getElementById('refineInput').value.toLowerCase().trim();
-
-            const filtered = database.parts.filter(part => {
-                const matchesModel = !selectedModel || part.compatible.includes(selectedModel);
-                const matchesCategory = !selectedCategory || part.category === selectedCategory;
-                const matchesMain = matchesSearchText(part, mainSearch);
-                const matchesRefine = matchesSearchText(part, refineSearch);
-                return matchesModel && matchesCategory && matchesMain && matchesRefine;
-            });
-            showParts(filtered);
-        }
-
-        function showParts(parts) {
-            const container = document.getElementById('partsContainer');
-            container.innerHTML = '';
-            if (parts.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:#666">Ничего не найдено</p>';
-                return;
-            }
-            const fragment = document.createDocumentFragment();
-            parts.forEach(part => {
-                const images = part.images || (part.image ? [part.image] : []);
-                const mainImage = images[0] || '';
-                let thumbnailsHtml = '';
-                if (images.length > 1) {
-                    thumbnailsHtml = '<div class="thumbnails">';
-                    images.forEach(img => {
-                        thumbnailsHtml += `<img src="${img}" class="thumbnail" loading="lazy" onclick="event.stopPropagation(); this.closest('.part-card').querySelector('.part-image').src='${img}'">`;
-                    });
-                    thumbnailsHtml += '</div>';
-                }
-                const card = document.createElement('div');
-                card.className = 'part-card';
-                card.setAttribute('data-part', JSON.stringify(part));
-                card.innerHTML = `
-                    <div class="image-container">
-                        <img src="${mainImage}" class="part-image" alt="${part.name}" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
-                    </div>
-                    ${thumbnailsHtml}
-                    <h3>${part.name}</h3>
-                    <p>Артикул: ${part.article}</p>
-                    <div class="price">${part.price.toLocaleString('ru-RU')} ₽</div>
-                    ${part.notes ? `<div class="part-notes">📝 ${part.notes}</div>` : ''}
-                    <div class="part-models">
-                        ${part.compatible.map(code => {
-                            const model = database.models.find(m => m.code === code);
-                            return model ? `<div class="model-chip">${model.name}</div>` : '';
-                        }).join('')}
-                    </div>
-                    <button class="add-to-cart-btn">🛒 Добавить в корзину</button>
-                `;
-                card.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('add-to-cart-btn')) {
-                        e.stopPropagation();
-                        addToCart(part);
-                    } else {
-                        openProductModal(part);
-                    }
-                });
-                fragment.appendChild(card);
-            });
-            container.appendChild(fragment);
-        }
-
-        // ==================== ПОДРОБНАЯ КАРТОЧКА ====================
-        function openProductModal(part) {
-            const modal = document.getElementById('productModal');
-            const modalContent = document.getElementById('modalContent');
-            const images = part.images || (part.image ? [part.image] : []);
-            const mainImage = images[0] || '';
-
-            let thumbnailsHtml = '';
-            if (images.length > 1) {
-                thumbnailsHtml = '<div class="thumbnails" style="margin-top:10px;">';
-                images.forEach(img => {
-                    thumbnailsHtml += `<img src="${img}" class="thumbnail" style="width:80px;" onclick="document.getElementById('modalMainImage').src='${img}'">`;
-                });
-                thumbnailsHtml += '</div>';
-            }
-
-            modalContent.innerHTML = `
-                <div style="text-align:center;">
-                    <img id="modalMainImage" src="${mainImage}" class="modal-image" alt="${part.name}" onerror="this.src='data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22200%22%20height%3D%22150%22%20viewBox%3D%220%200%20200%20150%22%3E%3Crect%20width%3D%22200%22%20height%3D%22150%22%20fill%3D%22%23f0f0f0%22%2F%3E%3Ctext%20x%3D%2235%22%20y%3D%2280%22%20font-family%3D%22Arial%22%20font-size%3D%2216%22%20fill%3D%22%23999%22%3E%D0%BD%D0%B5%D1%82%20%D1%84%D0%BE%D1%82%D0%BE%3C%2Ftext%3E%3C%2Fsvg%3E'">
-                </div>
-                ${thumbnailsHtml}
-                <h2>${part.name}</h2>
-                <p><strong>Артикул:</strong> ${part.article}</p>
-                <p><strong>Цена:</strong> ${part.price.toLocaleString('ru-RU')} ₽</p>
-                <p><strong>Категория:</strong> ${part.category}</p>
-                ${part.notes ? `<div class="part-notes">📝 ${part.notes}</div>` : ''}
-                <p><strong>Подходит для:</strong></p>
-                <div class="part-models">
-                    ${part.compatible.map(code => {
-                        const model = database.models.find(m => m.code === code);
-                        return model ? `<div class="model-chip">${model.name}</div>` : '';
-                    }).join('')}
-                </div>
-                <button class="add-to-cart-btn" style="margin-top:20px;">🛒 Добавить в корзину</button>
-            `;
-            modal.style.display = 'block';
-            const addBtn = modalContent.querySelector('.add-to-cart-btn');
-            addBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                addToCart(part);
-                modal.style.display = 'none';
-            });
-        }
-
-        // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+        // ==================== ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ ====================
         function initFilters() {
             const select = document.getElementById('modelSelect');
-            database.models.forEach(model => {
+            models.forEach(model => {
                 const option = document.createElement('option');
                 option.value = model.code;
                 option.textContent = model.name;
@@ -5020,20 +5041,21 @@
 
         function showEngineReference() {
             const container = document.getElementById('engineReference');
-            container.innerHTML = database.engines.map(engine => `
+            container.innerHTML = engines.map(engine => `
                 <div class="engine-card">
                     <div class="engine-code">Двигатель ${engine.code}</div>
                     <div>${engine.name}</div>
                     <div class="engine-models">
                         ${engine.models.map(code => {
-                            const model = database.models.find(m => m.code === code);
-                            return model ? `<span class="engine-model-chip">${model.name}</span>` : '';
+                            const model = models.find(m => m.code === code);
+                            return model ? `<span class="engine-model-chip">${escapeHtml(model.name)}</span>` : '';
                         }).join('')}
                     </div>
                 </div>
             `).join('');
         }
 
+        // Закрытие модальных окон
         const productModal = document.getElementById('productModal');
         const cartModalElem = document.getElementById('cartModal');
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -5055,6 +5077,7 @@
             if (event.target === cartModalElem) cartModalElem.style.display = 'none';
         };
 
+        // Автодополнение
         const searchInputElem = document.getElementById('searchInput');
         const autocompleteListElem = document.getElementById('autocompleteList');
         searchInputElem.addEventListener('input', () => {
@@ -5064,6 +5087,7 @@
             if (e.target !== searchInputElem) autocompleteListElem.style.display = 'none';
         });
 
+        // Debounced фильтр
         let filterTimeout;
         function debouncedFilter() {
             clearTimeout(filterTimeout);
@@ -5078,6 +5102,7 @@
         searchInputElem.addEventListener('input', debouncedFilter);
         document.getElementById('refineInput').addEventListener('input', debouncedFilter);
 
+        // Кнопка "Наверх"
         const scrollBtn = document.getElementById('scrollToTopBtn');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 300) {
