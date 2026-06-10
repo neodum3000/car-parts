@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автозапчасти — поиск с умными фильтрами</title>
+    <title>Автозапчасти — умный поиск с фильтрами</title>
     <style>
         * {
             box-sizing: border-box;
@@ -56,7 +56,6 @@
             border-color: #2c3e50;
         }
 
-        /* Шапка с иконками */
         .header-actions {
             display: flex;
             justify-content: flex-end;
@@ -114,14 +113,13 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* Блок фильтров с анимацией появления/исчезновения при скролле */
         .filters {
             background: white;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            transition: transform 0.3s ease, opacity 0.3s ease;
+            transition: transform 0.25s ease, opacity 0.25s ease;
             transform: translateY(0);
             opacity: 1;
         }
@@ -129,7 +127,7 @@
         .filters.hidden {
             transform: translateY(-100%);
             opacity: 0;
-            pointer-events: none; /* чтобы нельзя было кликнуть на скрытый блок */
+            pointer-events: none;
             margin-bottom: 0;
         }
 
@@ -339,7 +337,6 @@
             font-size: 0.8em;
         }
 
-        /* Модальные окна */
         .modal {
             display: none;
             position: fixed;
@@ -486,7 +483,6 @@
         <div id="engineReference"></div>
     </div>
 
-    <!-- Модальное окно подробной карточки товара -->
     <div id="productModal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -494,7 +490,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно корзины -->
     <div id="cartModal" class="modal">
         <div class="modal-content cart-modal-content">
             <span class="close-modal" id="closeCartModal">&times;</span>
@@ -4520,23 +4515,23 @@
 
         database = loadDatabase();
 
-        // ==================== УМНОЕ СКРЫТИЕ ФИЛЬТРОВ ПРИ СКРОЛЛЕ ====================
+        // ==================== УМНОЕ СКРЫТИЕ ФИЛЬТРОВ ====================
         let lastScrollTop = 0;
         const filtersBlock = document.getElementById('filtersBlock');
-        const scrollThreshold = 50; // минимальное изменение скролла для реакции
 
         window.addEventListener('scroll', function() {
             let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            let scrollDiff = scrollTop - lastScrollTop;
             
-            if (Math.abs(scrollDiff) < scrollThreshold) return;
-            
-            if (scrollDiff > 0 && scrollTop > 100) {
-                // Скролл вниз и проехали больше 100px — скрываем фильтры
-                filtersBlock.classList.add('hidden');
-            } else if (scrollDiff < 0) {
-                // Скролл вверх — показываем фильтры
-                filtersBlock.classList.remove('hidden');
+            if (scrollTop > lastScrollTop && scrollTop > 50) {
+                // Скролл вниз (и страница ушла больше 50px) — скрываем фильтры
+                if (!filtersBlock.classList.contains('hidden')) {
+                    filtersBlock.classList.add('hidden');
+                }
+            } else if (scrollTop < lastScrollTop) {
+                // Скролл вверх (любое движение вверх) — показываем фильтры
+                if (filtersBlock.classList.contains('hidden')) {
+                    filtersBlock.classList.remove('hidden');
+                }
             }
             lastScrollTop = scrollTop;
         });
@@ -4771,7 +4766,7 @@
             container.appendChild(fragment);
         }
 
-        // ==================== ПОДРОБНАЯ КАРТОЧКА (МОДАЛЬНОЕ ОКНО) ====================
+        // ==================== ПОДРОБНАЯ КАРТОЧКА ====================
         function openProductModal(part) {
             const modal = document.getElementById('productModal');
             const modalContent = document.getElementById('modalContent');
