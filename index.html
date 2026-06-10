@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автозапчасти — умный поиск с фильтрами</title>
+    <title>Автозапчасти — умный поиск</title>
     <style>
         * {
             box-sizing: border-box;
@@ -424,6 +424,35 @@
             display: block;
             margin: 0 auto;
         }
+
+        /* Кнопка "Наверх" */
+        .scroll-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+            z-index: 1000;
+        }
+        .scroll-to-top:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+        body.dark .scroll-to-top {
+            background: #f39c12;
+            color: #1a1a2e;
+        }
     </style>
 </head>
 <body>
@@ -499,6 +528,9 @@
             <button id="clearCartBtn" style="background:#e74c3c; color:white; border:none; padding:10px; border-radius:8px; margin-top:10px; width:100%;">Очистить корзину</button>
         </div>
     </div>
+
+    <!-- Кнопка "Наверх" -->
+    <button id="scrollToTopBtn" class="scroll-to-top" title="Наверх">⬆</button>
 
     <script>
         // ==================== КЕШИРОВАНИЕ ДАННЫХ ====================
@@ -4523,12 +4555,12 @@
             let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             
             if (scrollTop > lastScrollTop && scrollTop > 50) {
-                // Скролл вниз (и страница ушла больше 50px) — скрываем фильтры
+                // Скролл вниз (и проехали больше 50px) – скрываем фильтры
                 if (!filtersBlock.classList.contains('hidden')) {
                     filtersBlock.classList.add('hidden');
                 }
             } else if (scrollTop < lastScrollTop) {
-                // Скролл вверх (любое движение вверх) — показываем фильтры
+                // Любое движение вверх – показываем фильтры
                 if (filtersBlock.classList.contains('hidden')) {
                     filtersBlock.classList.remove('hidden');
                 }
@@ -4883,6 +4915,19 @@
         document.getElementById('categorySelect').addEventListener('change', debouncedFilter);
         searchInputElem.addEventListener('input', debouncedFilter);
         document.getElementById('refineInput').addEventListener('input', debouncedFilter);
+
+        // Кнопка "Наверх"
+        const scrollBtn = document.getElementById('scrollToTopBtn');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollBtn.style.display = 'flex';
+            } else {
+                scrollBtn.style.display = 'none';
+            }
+        });
+        scrollBtn.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
 
         loadFiltersFromURL();
         initFilters();
