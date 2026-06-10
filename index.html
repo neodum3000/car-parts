@@ -536,8 +536,7 @@
     <button id="scrollToTopBtn" class="scroll-to-top" title="Наверх">⬆</button>
 
     <script>
-        // ==================== ДАННЫЕ ====================
-        // Модели автомобилей (код -> отображаемое имя)
+        // ==================== МОДЕЛИ АВТОМОБИЛЕЙ ====================
         const models = [
             {code: '2101-2107', name: '2101-2107'},
             {code: '2107i', name: '2107i'},
@@ -556,7 +555,7 @@
             {code: 'XRAY', name: 'XRAY'}
         ];
 
-        // Справочник двигателей
+        // ==================== СПРАВОЧНИК ДВИГАТЕЛЕЙ ====================
         const engines = [
             { code: "2101", name: "1.2 л, 64 л.с., карбюратор", models: ["2101-2107"] },
             { code: "2103", name: "1.5 л, 77 л.с., карбюратор", models: ["2101-2107"] },
@@ -572,17 +571,18 @@
             { code: "K4M", name: "1.6 л, 106 л.с., инжектор (Renault)", models: ["Largus","XRAY"] }
         ];
 
-        // ⚠️ ВАШ МАССИВ ЗАПЧАСТЕЙ (замените пример на свои данные) ⚠️
-        const defaultParts = [
+        // ==================== ⚠️ ВАШ МАССИВ ЗАПЧАСТЕЙ ⚠️ ====================
+        // ВСТАВЬТЕ СЮДА СВОИ ЗАПЧАСТИ (ПОЛНОСТЬЮ ЗАМЕНИТЕ ЭТОТ МАССИВ)
+        const parts = [
             {
-                    name: 'Ремень генератора 2101',
-                    article: '2101-1308020',
-                    price: 315,
-                    image: 'images/2101-2107/Двигатель/ремень генератора 2101.webp',
-                    compatible: ['2101-2107','2121'],
-                    category: 'Двигатель',
-                    notes: 'Аналог: Gates 1234, Dayco 5678'
-                },
+                name: 'Ремень генератора 2101',
+                article: '2101-1308020',
+                price: 315,
+                image: 'images/2101-2107/Двигатель/ремень генератора 2101.webp',
+                compatible: ['2101-2107','2121'],
+                category: 'Двигатель',
+                notes: 'Аналог: Gates 1234, Dayco 5678'
+            },
                  {
                     name: 'Прокладка ГБЦ 2101',
                     article: 'GZ 101 2010',
@@ -4702,33 +4702,7 @@
                 }
             ];
 
-        // ==================== КЕШИРОВАНИЕ ====================
-        let parts = [];
-
-        function loadDatabase() {
-            const cached = localStorage.getItem('autoparts_database');
-            if (cached) {
-                try {
-                    const data = JSON.parse(cached);
-                    parts = data.parts || [];
-                    return;
-                } catch(e) {
-                    console.warn('Ошибка парсинга кеша', e);
-                }
-            }
-            // Если кеша нет или он повреждён, используем defaultParts
-            parts = defaultParts;
-            saveToLocalStorage();
-        }
-
-        function saveToLocalStorage() {
-            const data = { parts: parts };
-            localStorage.setItem('autoparts_database', JSON.stringify(data));
-        }
-
-        loadDatabase();
-
-        // ==================== КОРЗИНА ====================
+        // ==================== КОРЗИНА (localStorage только для корзины) ====================
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
         function saveCart() {
@@ -4798,7 +4772,7 @@
             });
         }
 
-        // ==================== УМНЫЙ СКРОЛЛ ====================
+        // ==================== УМНЫЙ СКРОЛЛ (прячем фильтры при скролле вниз) ====================
         let lastScrollTop = 0;
         const filtersBlock = document.getElementById('filtersBlock');
 
@@ -4816,7 +4790,7 @@
             lastScrollTop = scrollTop;
         });
 
-        // ==================== ОБЩИЕ ФУНКЦИИ ====================
+        // ==================== ФУНКЦИИ ФИЛЬТРАЦИИ И ОТРИСОВКИ ====================
         function getCompatibleModelsString(compatibleCodes) {
             return compatibleCodes.map(code => {
                 const model = models.find(m => m.code === code);
@@ -4943,7 +4917,7 @@
             });
         }
 
-        // ==================== ФИЛЬТРЫ URL ====================
+        // ==================== СОСТОЯНИЕ ФИЛЬТРОВ В URL ====================
         function updateURL() {
             const params = new URLSearchParams();
             const model = document.getElementById('modelSelect').value;
@@ -5028,7 +5002,7 @@
             filterParts();
         });
 
-        // ==================== ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ ====================
+        // ==================== ИНИЦИАЛИЗАЦИЯ ФИЛЬТРОВ И СПРАВОЧНИКА ====================
         function initFilters() {
             const select = document.getElementById('modelSelect');
             models.forEach(model => {
@@ -5055,7 +5029,7 @@
             `).join('');
         }
 
-        // Закрытие модальных окон
+        // ==================== ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН ====================
         const productModal = document.getElementById('productModal');
         const cartModalElem = document.getElementById('cartModal');
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -5077,7 +5051,7 @@
             if (event.target === cartModalElem) cartModalElem.style.display = 'none';
         };
 
-        // Автодополнение
+        // ==================== АВТОДОПОЛНЕНИЕ (слушатели) ====================
         const searchInputElem = document.getElementById('searchInput');
         const autocompleteListElem = document.getElementById('autocompleteList');
         searchInputElem.addEventListener('input', () => {
@@ -5087,7 +5061,7 @@
             if (e.target !== searchInputElem) autocompleteListElem.style.display = 'none';
         });
 
-        // Debounced фильтр
+        // ==================== DEBOUNCE ДЛЯ ФИЛЬТРОВ ====================
         let filterTimeout;
         function debouncedFilter() {
             clearTimeout(filterTimeout);
@@ -5102,7 +5076,7 @@
         searchInputElem.addEventListener('input', debouncedFilter);
         document.getElementById('refineInput').addEventListener('input', debouncedFilter);
 
-        // Кнопка "Наверх"
+        // ==================== КНОПКА "НАВЕРХ" ====================
         const scrollBtn = document.getElementById('scrollToTopBtn');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 300) {
@@ -5115,6 +5089,7 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
+        // ==================== ЗАПУСК ====================
         loadFiltersFromURL();
         initFilters();
         showEngineReference();
