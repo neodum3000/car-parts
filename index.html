@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Автозапчасти — умный поиск с корзиной</title>
     <style>
+        /* ... все стили такие же, как в вашем последнем рабочем варианте ... */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -230,7 +231,7 @@
             transition: transform 0.2s;
             display: flex;
             flex-direction: column;
-            height: 100%; /* чтобы карточки были одной высоты в ряду */
+            height: 100%;
         }
 
         .part-card:hover {
@@ -410,7 +411,7 @@
             padding: 8px 12px;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: auto; /* прижимаем кнопку к низу карточки */
+            margin-top: auto;
             width: 100%;
         }
 
@@ -431,7 +432,6 @@
             margin: 0 auto;
         }
 
-        /* Кнопка "Наверх" */
         .scroll-to-top {
             position: fixed;
             bottom: 30px;
@@ -535,7 +535,6 @@
         </div>
     </div>
 
-    <!-- Кнопка "Наверх" -->
     <button id="scrollToTopBtn" class="scroll-to-top" title="Наверх">⬆</button>
 
     <script>
@@ -4723,12 +4722,10 @@
             let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
             
             if (scrollTop > lastScrollTop && scrollTop > 50) {
-                // Скролл вниз – скрываем фильтры
                 if (!filtersBlock.classList.contains('hidden')) {
                     filtersBlock.classList.add('hidden');
                 }
             } else if (scrollTop < lastScrollTop) {
-                // Любое движение вверх – показываем фильтры
                 if (filtersBlock.classList.contains('hidden')) {
                     filtersBlock.classList.remove('hidden');
                 }
@@ -5037,7 +5034,6 @@
             `).join('');
         }
 
-        // Закрытие модальных окон
         const productModal = document.getElementById('productModal');
         const cartModalElem = document.getElementById('cartModal');
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -5059,7 +5055,6 @@
             if (event.target === cartModalElem) cartModalElem.style.display = 'none';
         };
 
-        // Автодополнение
         const searchInputElem = document.getElementById('searchInput');
         const autocompleteListElem = document.getElementById('autocompleteList');
         searchInputElem.addEventListener('input', () => {
@@ -5069,7 +5064,6 @@
             if (e.target !== searchInputElem) autocompleteListElem.style.display = 'none';
         });
 
-        // Debounced фильтр
         let filterTimeout;
         function debouncedFilter() {
             clearTimeout(filterTimeout);
@@ -5084,7 +5078,6 @@
         searchInputElem.addEventListener('input', debouncedFilter);
         document.getElementById('refineInput').addEventListener('input', debouncedFilter);
 
-        // Кнопка "Наверх"
         const scrollBtn = document.getElementById('scrollToTopBtn');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 300) {
