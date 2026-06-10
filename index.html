@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Автозапчасти — поиск с корзиной и фильтрами</title>
+    <title>Автозапчасти — поиск с умными фильтрами</title>
     <style>
         * {
             box-sizing: border-box;
@@ -56,6 +56,7 @@
             border-color: #2c3e50;
         }
 
+        /* Шапка с иконками */
         .header-actions {
             display: flex;
             justify-content: flex-end;
@@ -113,13 +114,23 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
+        /* Блок фильтров с анимацией появления/исчезновения при скролле */
         .filters {
             background: white;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             margin-bottom: 20px;
-            /* Убрано sticky, теперь фильтры не прилипают */
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .filters.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none; /* чтобы нельзя было кликнуть на скрытый блок */
+            margin-bottom: 0;
         }
 
         select, input {
@@ -409,7 +420,6 @@
             flex: 1;
         }
 
-        /* Стили для изображения в модальном окне */
         .modal-image {
             max-width: 100%;
             max-height: 300px;
@@ -428,7 +438,7 @@
         <div class="share-btn" id="shareBtn">📤 Поделиться</div>
     </div>
 
-    <div class="filters">
+    <div class="filters" id="filtersBlock">
         <select id="modelSelect">
             <option value="">Все модели</option>
         </select>
@@ -4509,6 +4519,27 @@
         }
 
         database = loadDatabase();
+
+        // ==================== УМНОЕ СКРЫТИЕ ФИЛЬТРОВ ПРИ СКРОЛЛЕ ====================
+        let lastScrollTop = 0;
+        const filtersBlock = document.getElementById('filtersBlock');
+        const scrollThreshold = 50; // минимальное изменение скролла для реакции
+
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            let scrollDiff = scrollTop - lastScrollTop;
+            
+            if (Math.abs(scrollDiff) < scrollThreshold) return;
+            
+            if (scrollDiff > 0 && scrollTop > 100) {
+                // Скролл вниз и проехали больше 100px — скрываем фильтры
+                filtersBlock.classList.add('hidden');
+            } else if (scrollDiff < 0) {
+                // Скролл вверх — показываем фильтры
+                filtersBlock.classList.remove('hidden');
+            }
+            lastScrollTop = scrollTop;
+        });
 
         // ==================== КОРЗИНА ====================
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
